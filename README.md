@@ -2,6 +2,8 @@
 
 [![Maintainer](https://img.shields.io/badge/Maintainer-Aniket%20Jadhav-0A66C2?logo=linkedin&logoColor=white)](https://www.linkedin.com/in/meaniikett/)
 [![GitHub](https://img.shields.io/badge/GitHub-Aniket601-181717?logo=github&logoColor=white)](https://github.com/Aniket601)
+[![Latest Release](https://img.shields.io/github/v/release/Aniket601/Universal-AlderLake-IrisXe?logo=github&style=flat-square&color=0A66C2)](https://github.com/Aniket601/Universal-AlderLake-IrisXe/releases)
+[![Views](https://hits.sh/github.com/Aniket601/Universal-AlderLake-IrisXe.svg?view=today-total&style=flat-square&label=views&color=007ec6)](https://hits.sh/github.com/Aniket601/Universal-AlderLake-IrisXe/)
 [![VoodooI2C Contributor](https://img.shields.io/badge/VoodooI2C-Contributor%20(PR%20%23588)-purple?logo=github)](https://github.com/VoodooI2C/VoodooI2C/pull/588)
 [![WhateverXe Validated](https://img.shields.io/badge/WhateverXe-Validated%20(Issue%20%2364)-blue?logo=github)](https://github.com/b00t0x/WhateverXe/issues/64)
 [![OpenCore](https://img.shields.io/badge/OpenCore-1.0.8-black)](https://github.com/acidanthera/OpenCorePkg)
@@ -28,6 +30,7 @@ Using the groundbreaking `WhateverXe` graphics stack paired with `SSDT-PLUG-ALT`
 * **Native 10-core / 12-core Scheduling** (P-cores + E-cores managed efficiently).
 * **Full Apple Ecosystem Services** (iMessage, FaceTime, APNS via LinkQuality watchdog).
 * **Instant Lid-Close Sleep** without Modern Standby S0ix kernel stalls.
+* **Sleek OpenCanopy Graphical Boot Picker** (Apple & Windows high-res icons with trackpad/mouse pointer support).
 
 ```
        ┌────────────────────────────────────────────────────────┐
