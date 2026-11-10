@@ -31,9 +31,9 @@ Using the groundbreaking `WhateverXe` graphics stack paired with `SSDT-PLUG-ALT`
 
 ```
        ┌────────────────────────────────────────────────────────┐
-       │   Universal Alder Lake Core Engine (100% Shared)        │
+       │   Universal Alder Lake Core Engine (100% Shared)       │
        │   • CPU Topology & Big.LITTLE (SSDT-PLUG-ALT)          │
-       │   • Intel Iris Xe Metal 2 Acceleration (WhateverXe)     │
+       │   • Intel Iris Xe Metal 2 Acceleration (WhateverXe)    │
        │   • ACPI Timers, Power & USB Architecture              │
        └──────────────────────────┬─────────────────────────────┘
                                   │

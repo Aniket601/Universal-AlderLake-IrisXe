@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 #
-# post-install.sh — Automated Post-Install & Stability Tool for macOS on Lenovo IdeaPad 3 15IAU7
-# Part of AlderLake-IrisXe-OpenCore (https://github.com/Aniket601/AlderLake-IrisXe-OpenCore)
+# post-install.sh — Automated Post-Install & Stability Tool for macOS on Intel Alder Lake Laptops
+# Part of Universal-AlderLake-IrisXe (https://github.com/Aniket601/Universal-AlderLake-IrisXe)
 #
 # Author: Aniket Jadhav (@Aniket601)
 # Description:
-#   Hardens macOS (Tahoe / Sonoma / Ventura) on Intel 12th Gen Alder Lake laptops.
+#   Hardens macOS (Tahoe / Sonoma / Ventura) on Intel 12th/13th Gen laptops.
 #   Fixes Apple Push Service (APNS) & iMessage LinkQuality, prevents lid-close freezes,
 #   safeguards /Library/Extensions kexts against silent OS updates, applies VideoToolbox
 #   GVA stability patches, and provides live battery & Metal diagnostics.
@@ -264,10 +264,13 @@ show_diagnostics() {
     fi
 
     # APNS / LinkQuality Check
+    local DIAG_WIFI
+    DIAG_WIFI=$(networksetup -listallhardwareports 2>/dev/null | awk '/Wi-Fi|AirPort/{getline; print $2}')
+    DIAG_WIFI="${DIAG_WIFI:-en0}"
     local APNS_LQ
-    APNS_LQ=$(/usr/sbin/scutil <<< "show State:/Network/Interface/en0/LinkQuality" 2>/dev/null | awk '/LinkQuality :/ {print $3}')
+    APNS_LQ=$(/usr/sbin/scutil <<< "show State:/Network/Interface/$DIAG_WIFI/LinkQuality" 2>/dev/null | awk '/LinkQuality :/ {print $3}')
     echo -e "\n${CYAN}--- Network & Apple Push Service (APNS) ---${NC}"
-    echo -e "  • ${BOLD}en0 LinkQuality:${NC}   ${APNS_LQ:-N/A} / 100"
+    echo -e "  • ${BOLD}${DIAG_WIFI} LinkQuality:${NC}   ${APNS_LQ:-N/A} / 100"
 
     # Advice for Lenovo Conservation Mode
     echo -e "\n${YELLOW}${BOLD}[*] Battery Longevity Tip:${NC}"

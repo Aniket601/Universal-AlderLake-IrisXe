@@ -18,7 +18,7 @@ import shutil
 import plistlib
 import argparse
 
-VERSION = "1.0.0"
+VERSION = "1.1.0"
 
 # ANSI Colors
 BOLD = "\033[1m"
@@ -153,50 +153,66 @@ def patch_config(config_path, brand, wifi, alcid):
     with open(config_path, "rb") as f:
         config = plistlib.load(f)
 
-    # 1. Update boot-args with selected alcid
-    nvram_add = config.get("NVRAM", {}).get("Add", {}).get("7C436110-AB2A-4BBB-A880-FE41995C9F82", {})
+    brand_cfg = OEM_DEFAULTS.get(brand, {})
+
+    # 1. Update boot-args cleanly (strips or adds -vi2c-force-polling properly)
+    nvram_add = config.setdefault("NVRAM", {}).setdefault("Add", {}).setdefault("7C436110-AB2A-4BBB-A880-FE41995C9F82", {})
     if "boot-args" in nvram_add:
         args = nvram_add["boot-args"].split()
         new_args = []
-        alcid_found = False
         for arg in args:
             if arg.startswith("alcid="):
-                new_args.append(f"alcid={alcid}")
-                alcid_found = True
-            else:
-                new_args.append(arg)
-        if not alcid_found:
-            new_args.append(f"alcid={alcid}")
-        
-        # Trackpad force-polling for Alder Lake LPSS I2C
-        brand_cfg = OEM_DEFAULTS.get(brand, {})
+                continue
+            if arg == "-vi2c-force-polling" and brand_cfg.get("trackpad") != "i2c-polling":
+                continue  # Remove force-polling flag for standard interrupt-driven I2C
+            new_args.append(arg)
+
+        new_args.append(f"alcid={alcid}")
         if brand_cfg.get("trackpad") == "i2c-polling" and "-vi2c-force-polling" not in new_args:
             new_args.append("-vi2c-force-polling")
 
         nvram_add["boot-args"] = " ".join(new_args)
 
-    # 2. Kernel Kext toggles
+    # 2. Synchronize layout-id in DeviceProperties if present
+    dev_props = config.setdefault("DeviceProperties", {}).setdefault("Add", {})
+    audio_path = "PciRoot(0x0)/Pci(0x1F,0x3)"
+    if audio_path in dev_props:
+        try:
+            alcid_int = int(alcid)
+            dev_props[audio_path]["layout-id"] = alcid_int.to_bytes(4, byteorder="little")
+        except ValueError:
+            pass
+
+    # 3. Kernel Kext toggles
     kexts = config.get("Kernel", {}).get("Add", [])
     for k in kexts:
         bundle = k.get("BundlePath", "")
-        # Wi-Fi kext gating
+        # Realtek Wi-Fi gating
         if "AirportRTW" in bundle:
             k["Enabled"] = (wifi == "realtek")
-        elif "AirportItlwm" in bundle or "itlwm" in bundle:
-            k["Enabled"] = (wifi == "intel")
         # Realtek Bluetooth gating
-        if "RealtekBluetooth" in bundle:
+        elif "RealtekBluetooth" in bundle:
             k["Enabled"] = (wifi == "realtek")
-        # Lenovo-specific battery SSDT gating
-        if "SSDT-BAT0" in k.get("Comment", "") or "SSDT-BAT0" in bundle:
+        # Intel Wi-Fi / Bluetooth gating
+        elif "AirportItlwm" in bundle or "itlwm" in bundle or "IntelBluetooth" in bundle:
+            k["Enabled"] = (wifi == "intel")
+        # Lenovo-specific USB map gating (do not enforce Lenovo map on Dell/HP/Asus)
+        elif "UTBMap" in bundle:
             k["Enabled"] = (brand == "lenovo")
 
-    # 3. ACPI toggles
+    # 4. ACPI Add toggles
     acpi_list = config.get("ACPI", {}).get("Add", [])
     for a in acpi_list:
         path = a.get("Path", "")
         if "SSDT-BAT0" in path:
             a["Enabled"] = (brand == "lenovo")
+
+    # 5. ACPI Binary Patch toggles (BAT0._STA to XSTA must only run on Lenovo)
+    acpi_patches = config.get("ACPI", {}).get("Patch", [])
+    for p in acpi_patches:
+        comment = p.get("Comment", "")
+        if "BAT0._STA" in comment or "BAT0" in comment:
+            p["Enabled"] = (brand == "lenovo")
 
     # Write patched config atomically
     with open(config_path, "wb") as f:
@@ -206,6 +222,20 @@ def build_efi(options):
     repo_root = get_repo_root()
     source_efi = os.path.join(repo_root, "EFI")
     target_efi = os.path.abspath(options["out"])
+
+    # Security Guard: Prevent arbitrary or catastrophic filesystem deletion
+    forbidden_targets = [
+        os.path.abspath(os.sep),
+        os.path.expanduser("~"),
+        repo_root,
+        os.path.join(repo_root, "EFI"),
+        os.path.join(repo_root, "tools"),
+        os.path.join(repo_root, "scripts"),
+        os.path.join(repo_root, "docs")
+    ]
+    if target_efi in forbidden_targets:
+        print(f"{RED}[ERROR] Refusing to overwrite critical system or repository directory: {target_efi}{NC}")
+        sys.exit(1)
 
     if not os.path.isdir(source_efi):
         print(f"{RED}[ERROR] Source EFI directory not found at {source_efi}{NC}")
@@ -217,7 +247,7 @@ def build_efi(options):
     print(f"  • Audio ALCID: {GREEN}{options['alcid']}{NC}")
     print(f"  • Destination: {CYAN}{target_efi}{NC}\n")
 
-    # Clean existing target
+    # Clean existing target safely
     if os.path.exists(target_efi):
         print(f"{YELLOW}[*] Destination exists. Cleaning...{NC}")
         shutil.rmtree(target_efi)
@@ -237,6 +267,13 @@ def build_efi(options):
 
     print(f"\n{GREEN}{BOLD}✔ Universal EFI successfully generated!{NC}")
     print(f"Location: {BOLD}{target_efi}{NC}\n")
+
+    if options["wifi"] == "intel":
+        print(f"{CYAN}{BOLD}[*] Intel Wi-Fi Note:{NC}")
+        print(f"  Intel Wi-Fi cards use AirportItlwm.kext matching your specific macOS version.")
+        print(f"  Download the latest AirportItlwm release for Tahoe/Sonoma/Ventura from:")
+        print(f"  https://github.com/OpenIntelWireless/itlwm/releases and place into EFI/OC/Kexts/\n")
+
     print(f"{YELLOW}{BOLD}Next Steps:{NC}")
     print(f"1. Generate your SMBIOS using GenSMBIOS (MacBookPro16,2).")
     print(f"2. Copy the contents of {target_efi} directly to your USB EFI partition.")
@@ -255,7 +292,6 @@ def main():
 
     args = parser.parse_args()
 
-    # If flags are provided, run headless; otherwise run interactive wizard
     if args.brand:
         brand_cfg = OEM_DEFAULTS[args.brand]
         opts = {
@@ -271,4 +307,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
