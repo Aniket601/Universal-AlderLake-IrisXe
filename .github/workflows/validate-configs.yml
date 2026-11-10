@@ -1,0 +1,50 @@
+name: "Validate Universal OpenCore Configurations"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  validate-builder:
+    runs-on: macos-latest
+    steps:
+      - name: "Checkout repository"
+        uses: actions/checkout@v4
+
+      - name: "Set up Python"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: "Test Builder: Lenovo IdeaPad Preset"
+        run: |
+          python3 tools/alderlake-builder.py --brand lenovo --wifi realtek --alcid 100 --out ./build/lenovo
+          test -f ./build/lenovo/OC/config.plist
+          test -f ./build/lenovo/OC/OpenCore.efi
+
+      - name: "Test Builder: Dell Inspiron Preset"
+        run: |
+          python3 tools/alderlake-builder.py --brand dell --wifi intel --alcid 13 --out ./build/dell
+          test -f ./build/dell/OC/config.plist
+
+      - name: "Test Builder: HP Pavilion Preset"
+        run: |
+          python3 tools/alderlake-builder.py --brand hp --wifi intel --alcid 3 --out ./build/hp
+          test -f ./build/hp/OC/config.plist
+
+      - name: "Test Builder: Asus Vivobook Preset"
+        run: |
+          python3 tools/alderlake-builder.py --brand asus --wifi intel --alcid 13 --out ./build/asus
+          test -f ./build/asus/OC/config.plist
+
+      - name: "Test Builder: Generic Alder Lake Preset"
+        run: |
+          python3 tools/alderlake-builder.py --brand generic --wifi none --alcid 11 --out ./build/generic
+          test -f ./build/generic/OC/config.plist
+
+      - name: "Validate Script Syntax"
+        run: |
+          bash -n scripts/post-install.sh
+

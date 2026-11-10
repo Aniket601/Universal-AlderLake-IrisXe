@@ -1,0 +1,76 @@
+name: "Hardware Model Verification"
+description: "Submit your tested Intel 12th/13th Gen laptop to expand the Universal Compatibility Matrix"
+title: "[Verification]: <Brand> <Model Name> (e.g. Dell Inspiron 3520)"
+labels: ["model-verification", "community-tested"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for helping verify Intel 12th/13th Gen laptop compatibility with **Universal-AlderLake-IrisXe**!
+        Please fill out your verified hardware details below.
+  - type: input
+    id: laptop-model
+    attributes:
+      label: "Exact Laptop Model"
+      placeholder: "e.g., Dell Inspiron 15 3520, HP Pavilion 15-eg2000, Asus Vivobook X1502"
+    validations:
+      required: true
+  - type: dropdown
+    id: cpu-model
+    attributes:
+      label: "Processor Model"
+      options:
+        - "Intel Core i3-1215U (6C)"
+        - "Intel Core i5-1235U (10C)"
+        - "Intel Core i7-1255U (10C)"
+        - "Intel Core i5-1240P (12C)"
+        - "Intel Core i7-1260P (12C)"
+        - "Intel 13th Gen Raptor Lake (i5-1335U / i7-1355U)"
+        - "Other"
+    validations:
+      required: true
+  - type: input
+    id: audio-codec
+    attributes:
+      label: "Audio Codec & Layout-ID"
+      placeholder: "e.g., Realtek ALC256 with alcid=13"
+    validations:
+      required: true
+  - type: input
+    id: wifi-controller
+    attributes:
+      label: "Wi-Fi & Bluetooth Controller"
+      placeholder: "e.g., Intel Wi-Fi 6 AX201, Realtek RTL8852BE"
+    validations:
+      required: true
+  - type: dropdown
+    id: macos-version
+    attributes:
+      label: "macOS Version Tested"
+      options:
+        - "macOS Tahoe 26.x"
+        - "macOS Sonoma 14.x"
+        - "macOS Ventura 13.x"
+    validations:
+      required: true
+  - type: checkboxes
+    id: working-features
+    attributes:
+      label: "Working Features"
+      options:
+        - label: "Intel Iris Xe Metal Acceleration (1536 MB VRAM)"
+          required: true
+        - label: "Internal Display Backlight & Brightness Keys"
+        - label: "Built-in Speakers, Mic, & 3.5mm Headphone Jack"
+        - label: "Precision I2C Multi-touch Trackpad & Gestures"
+        - label: "Wi-Fi 6 & Bluetooth Pairing"
+        - label: "Battery Telemetry & Percentage"
+        - label: "Lid-close Display Sleep"
+  - type: textarea
+    id: verification-evidence
+    attributes:
+      label: "Verification Screenshot or System Info"
+      placeholder: "Paste a screenshot of 'About This Mac' showing Intel Iris Xe Graphics or attach IORegistry extract."
+    validations:
+      required: false
+
